@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Sigma Shop - @yield('title')</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Farro&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/brands.min.css">
     <style>
         body {
             font-family: "Farro", Helvetica, sans-serif;
@@ -50,6 +52,19 @@
                 
                 <!-- Right Section - Cart and User Actions -->
                 <div class="hidden md:flex items-center space-x-8">
+                    @auth
+                        <a href="{{ route('favourites.index') }}" class="text-gray-300 hover:text-white relative">
+                            <i class="fas fa-heart"></i>
+                            @php
+                                $favouritesCount = auth()->user()->favourites()->count();
+                            @endphp
+                            @if($favouritesCount > 0)
+                                <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                    {{ $favouritesCount }}
+                                </span>
+                            @endif
+                        </a>
+                    @endauth
                     <a href="/cart" class="text-gray-300 hover:text-white relative">
                         <i class="fas fa-shopping-cart"></i>
                         @auth

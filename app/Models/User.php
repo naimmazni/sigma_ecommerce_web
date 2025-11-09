@@ -68,6 +68,16 @@ class User extends Authenticatable
         return $this->hasMany(Message::class);
     }
 
+    public function favourites()
+    {
+        return $this->hasMany(Favourite::class);
+    }
+
+    public function hasFavourited($productId)
+    {
+        return $this->favourites()->where('product_id', $productId)->exists();
+    }
+
     public function isAdmin()
     {
         return $this->role === 'admin';

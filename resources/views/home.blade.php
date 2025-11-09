@@ -118,22 +118,36 @@
                             Premium quality streetwear designed for modern fashion enthusiasts.
                         </p>
 
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-2">
+                        <div class="flex items-start justify-between mb-2">
+                            <div class="flex flex-col space-y-1 flex-1">
                                 <span class="text-2xl font-bold text-white">RM{{ number_format($product->price, 2) }}</span>
                                 @if($product->price > 100)
-                                <span class="text-sm text-gray-500 line-through">RM{{ number_format($product->price * 1.2, 2) }}</span>
-                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-500 text-white">
-                                    -20%
-                                </span>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-sm text-gray-500 line-through">RM{{ number_format($product->price * 1.2, 2) }}</span>
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-500 text-white">
+                                        -20%
+                                    </span>
+                                </div>
                                 @endif
                             </div>
                             
-                            <div class="flex items-center space-x-2">
-                                <button class="w-8 h-8 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-full flex items-center justify-center transition-colors duration-200">
-                                    <i class="fas fa-heart"></i>
-                                </button>
-                                <button class="w-8 h-8 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-full flex items-center justify-center transition-colors duration-200">
+                            <div class="flex items-center space-x-2 flex-shrink-0 ml-2">
+                                @auth
+                                    <button onclick="toggleFavourite({{ $product->id }}, this)" 
+                                            class="favourite-btn w-8 h-8 {{ auth()->user()->hasFavourited($product->id) ? 'bg-red-500 hover:bg-red-600' : 'bg-gray-700 hover:bg-gray-600' }} text-white rounded-full flex items-center justify-center transition-colors duration-200"
+                                            data-product-id="{{ $product->id }}">
+                                        <i class="fas fa-heart"></i>
+                                    </button>
+                                @else
+                                    <a href="{{ route('login') }}" 
+                                       class="w-8 h-8 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-full flex items-center justify-center transition-colors duration-200"
+                                       title="Login to add to favourites">
+                                        <i class="fas fa-heart"></i>
+                                    </a>
+                                @endauth
+                                <button onclick="shareProduct('{{ $product->name }}', '{{ route('products.show', $product->slug) }}')" 
+                                        class="w-8 h-8 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-full flex items-center justify-center transition-colors duration-200"
+                                        title="Share this product">
                                     <i class="fas fa-share-alt"></i>
                                 </button>
                             </div>
@@ -289,6 +303,143 @@
             closeWelcomePopup();
         }
     });
+
+    // Toggle favourite functionality
+    function toggleFavourite(productId, button) {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        
+        if (!csrfToken) {
+            showNotification('Security token not found. Please refresh the page.', 'error');
+            return;
+        }
+
+        fetch(`/favourites/${productId}/toggle`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken.content,
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data) return;
+            
+            if (data.status === 'added') {
+                button.classList.remove('bg-gray-700', 'hover:bg-gray-600');
+                button.classList.add('bg-red-500', 'hover:bg-red-600');
+                showNotification(data.message, 'success');
+            } else {
+                button.classList.remove('bg-red-500', 'hover:bg-red-600');
+                button.classList.add('bg-gray-700', 'hover:bg-gray-600');
+                showNotification(data.message, 'info');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Unable to update favourites. Please try again.', 'error');
+        });
+    }
+
+    // Share product functionality
+    function shareProduct(productName, productUrl) {
+        const fullUrl = '{{ url('/') }}' + productUrl.replace('{{ url('/') }}', '');
+        
+        if (navigator.share) {
+            navigator.share({
+                title: productName,
+                text: `Check out ${productName} on Sigma Shop!`,
+                url: fullUrl
+            }).catch(error => console.log('Error sharing:', error));
+        } else {
+            // Fallback: Copy to clipboard
+            navigator.clipboard.writeText(fullUrl).then(() => {
+                showNotification('Link copied to clipboard!', 'success');
+            }).catch(() => {
+                // Show share modal as final fallback
+                showShareModal(productName, fullUrl);
+            });
+        }
+    }
+
+    // Show share modal
+    function showShareModal(productName, productUrl) {
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+        modal.innerHTML = `
+            <div class="bg-gray-800 rounded-lg p-6 max-w-md w-full">
+                <h3 class="text-xl font-bold text-white mb-4">Share ${productName}</h3>
+                <div class="space-y-3">
+                    <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(productUrl)}" 
+                       target="_blank" 
+                       class="block w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg text-center transition-colors">
+                        <i class="fab fa-facebook-f mr-2"></i> Share on Facebook
+                    </a>
+                    <a href="https://twitter.com/intent/tweet?url=${encodeURIComponent(productUrl)}&text=${encodeURIComponent('Check out ' + productName + ' on Sigma Shop!')}" 
+                       target="_blank" 
+                       class="block w-full bg-sky-500 hover:bg-sky-600 text-white py-3 px-4 rounded-lg text-center transition-colors">
+                        <i class="fab fa-twitter mr-2"></i> Share on Twitter
+                    </a>
+                    <a href="https://wa.me/?text=${encodeURIComponent('Check out ' + productName + ' on Sigma Shop! ' + productUrl)}" 
+                       target="_blank" 
+                       class="block w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg text-center transition-colors">
+                        <i class="fab fa-whatsapp mr-2"></i> Share on WhatsApp
+                    </a>
+                    <button onclick="copyToClipboard('${productUrl}')" 
+                            class="block w-full bg-gray-700 hover:bg-gray-600 text-white py-3 px-4 rounded-lg text-center transition-colors">
+                        <i class="fas fa-copy mr-2"></i> Copy Link
+                    </button>
+                </div>
+                <button onclick="this.closest('.fixed').remove()" 
+                        class="mt-4 w-full bg-gray-600 hover:bg-gray-500 text-white py-2 px-4 rounded-lg transition-colors">
+                    Close
+                </button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    }
+
+    // Copy to clipboard
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            showNotification('Link copied to clipboard!', 'success');
+        });
+    }
+
+    // Show notification
+    function showNotification(message, type = 'info') {
+        const colors = {
+            success: 'bg-green-500',
+            error: 'bg-red-500',
+            info: 'bg-blue-500'
+        };
+        
+        const notification = document.createElement('div');
+        notification.className = `fixed top-20 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300`;
+        notification.textContent = message;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
 </script>
 
 @endsection 

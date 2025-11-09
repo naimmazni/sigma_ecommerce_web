@@ -17,7 +17,6 @@ return new class extends Migration
             $table->json('sizes')->default(json_encode(['S', 'M', 'L', 'XL']));
             $table->string('category');
             $table->string('image');
-            $table->integer('stock');
             $table->boolean('featured')->default(false);
             $table->timestamps();
         });

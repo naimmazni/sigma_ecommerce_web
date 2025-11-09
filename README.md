@@ -117,11 +117,6 @@ npm run dev
 php artisan serve
 ```
 
-## 🌐 Access the Website
-
--   **Main Site**: http://localhost:8000
--   **Admin Dashboard**: http://localhost:8000/admin/dashboard
-
 ## 👤 Default Login Credentials
 
 ### Admin Account
@@ -132,29 +127,7 @@ php artisan serve
 ### Customer Account
 
 -   **Email**: test@example.com
--   **Password**: password
-
-## 📁 Project Structure
-
-```
-sigma_ecommerce_web/
-├── app/
-│   ├── Http/Controllers/
-│   │   ├── Admin/          # Admin controllers
-│   │   ├── Auth/           # Authentication controllers
-│   │   └── ...             # Main controllers
-│   ├── Models/             # Eloquent models
-│   └── Middleware/         # Custom middleware
-├── database/
-│   ├── migrations/         # Database migrations
-│   └── seeders/           # Database seeders
-├── resources/views/
-│   ├── admin/             # Admin views
-│   ├── auth/              # Authentication views
-│   └── ...                # Main views
-└── routes/
-    └── web.php            # Web routes
-```
+-   **Password**: password123
 
 ## 🔧 Key Features Explained
 

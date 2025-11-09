@@ -13,7 +13,7 @@ class CustomerSeeder extends Seeder
         $customers = [
             [
                 'name' => 'John Doe',
-                'email' => 'john@example.com',
+                'email' => 'test@example.com',
                 'password' => Hash::make('password123'),
                 'role' => 'customer',
                 'phone' => '+60123456788',
